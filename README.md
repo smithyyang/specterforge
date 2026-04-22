@@ -1,57 +1,87 @@
-# 🦊 Camoufox Profile Manager
+🦊 Camoufox WRB (Web Remote Browser)
 
-一个基于 Camoufox 的本地指纹浏览器管理界面，无限 Profile，完全免费。
+Camoufox WRB is a high-performance, lightweight Web-based profile manager for Camoufox. It provides an intuitive dashboard to manage multiple browser environments with professional-grade fingerprint protection and secure network routing.
 
-## 安装
+    Note: This is the Web Manager (WRB) version. A Native Desktop version is currently in the planning stage.
 
-```bash
-# 1. 克隆 / 解压到任意目录
-cd camoufox-manager
+✨ Key Features
 
-# 2. 创建虚拟环境（推荐）
-python3 -m venv venv
-source venv/bin/activate
+    🛡️ Advanced Fingerprint Spoofing:
 
-# 3. 安装依赖
-pip install -r requirements.txt
+        Font Protection: Automatically loads a system-specific font whitelist from fonts.json to prevent leaking host fonts (crucial for Linux power users).
 
-# 4. 下载 Camoufox 浏览器二进制（首次必须运行）
-python3 -m camoufox fetch
+        Hardware Emulation: Spoof WebGL vendors, renderers, and CPU hardware concurrency (navigator.hardwareConcurrency).
 
-# 5. 启动管理界面
+    🌐 Secure Network Routing:
+
+        Anti-DNS Leak: Automatically converts socks5 to socks5h to force remote DNS resolution at the proxy node, ensuring a 100% clean test on BrowserScan.
+
+        Integrated Proxy Tester: Uses curl to verify connectivity, latency, and geolocational data (ISP, City, Country) for HTTP/SOCKS proxies.
+
+    🧩 Extension Store Integration:
+
+        AMO Search: Browse and search the official Firefox Add-ons (AMO) store directly from the dashboard.
+
+        One-Click Install: Download .xpi files and distribute them to specific profiles with a single click.
+
+    💾 Smart Session Memory:
+
+        Session Restore: Automatically records and restores the last open tabs upon the next launch.
+
+    ⚙️ System Stability:
+
+        Async Log System: Redirects browser stdout/stderr to browser.log files to prevent pipe buffer deadlocks and sudden window crashes.
+
+        Zombie Killer: Built-in utility to scan and terminate untracked or orphaned browser processes.
+
+🚀 Getting Started
+Prerequisites
+
+    Python 3.10+
+
+    curl (required for proxy connectivity tests)
+
+Installation
+
+    Clone the repository:
+    Bash
+
+    git clone https://github.com/smithyyang/camoufox-manager-web.git
+    cd camoufox-manager-web
+
+    Set up Virtual Environment:
+    Bash
+
+    python3 -m venv venv
+    source venv/bin/activate  # Linux/macOS
+    # .\venv\Scripts\activate # Windows
+
+    Install Dependencies:
+    Bash
+
+    pip install -r requirements.txt
+
+    Fetch Browser Binaries (Required for first-time use):
+    Bash
+
+    python3 -m camoufox fetch
+
+Run the Application
+Bash
+
 python3 app.py
-```
 
-然后在浏览器访问：http://localhost:7070
+Access the dashboard at http://localhost:7070.
+📂 Project Structure
 
-## 功能
+    app.py: Flask backend managing profile lifecycles and AMO API integration.
 
-- ✅ 无限 Profile（本地存储，无账号限制）
-- ✅ 每个 Profile 独立的浏览器数据目录（Cookie/localStorage 完全隔离）
-- ✅ 配置：操作系统指纹（Windows/macOS/Linux）、语言/Locale、屏幕分辨率
-- ✅ 代理绑定：HTTP / SOCKS5，per-profile 独立配置
-- ✅ 标签 Tags + 备注 Notes
-- ✅ 启动 / 关闭浏览器实例，实时状态显示
-- ✅ 指纹由 Camoufox 内置的 BrowserForge 自动生成（每个 Profile 第一次启动时固定）
+    profiles_data/: Local storage for environment metadata and browser userdata (automatically ignored by Git).
 
-## 目录结构
+    extensions/: Local repository for downloaded .xpi extension files.
 
-```
-camoufox-manager/
-├── app.py              # Flask 后端
-├── requirements.txt
-├── templates/
-│   └── index.html      # 前端 UI
-└── profiles_data/      # 自动创建，每个 Profile 一个子目录
-    └── <profile_id>/
-        ├── meta.json   # Profile 配置
-        ├── launch.py   # 自动生成的启动脚本
-        └── userdata/   # 浏览器数据（Cookie、缓存等）
-```
+    templates/index.html: Modern, dark-themed dashboard UI.
 
-## 注意事项
+📄 License
 
-- **隐私**：管理界面只监听 127.0.0.1，不对外暴露
-- **代理**：强烈建议每个 Profile 绑定不同代理，否则 IP 相同会被关联
-- **Camoufox 限制**：基于 Firefox 内核，无法模拟 Chrome 指纹
-- **当前状态**：Camoufox 2026 年处于 beta 阶段，偶有不稳定
+This project is licensed under the MIT License.
