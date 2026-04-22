@@ -1,0 +1,12 @@
+profiles_data/
+*.log
+venv/
+__pycache__/
+*.bak
+.vscode/
+.idea/
+venv/
+__pycache__/
+*.bak
+.vscode/
+.idea/

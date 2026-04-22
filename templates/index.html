@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Camoufox Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Variables ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-app:      #09090b;
+  --bg-panel:    #18181b;
+  --bg-input:    #27272a;
+  --bg-hover:    #27272a;
+  --border:      #27272a;
+  --border-focus:#3f3f46;
+  --text-main:   #fafafa;
+  --text-muted:  #a1a1aa;
+  --accent:      #f97316;
+  --accent-hover:#fb923c;
+  --accent-glow: rgba(249,115,22,0.15);
+  --success:     #10b981;
+  --danger:      #ef4444;
+  --info:        #3b82f6;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --font-sans:   'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --font-mono:   'JetBrains Mono',monospace;
+}
+
+html,body { height:100%; background:var(--bg-app); color:var(--text-main); font-family:var(--font-sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.app { display:grid; grid-template-rows:56px 1fr; grid-template-columns:280px 1fr; height:100vh; overflow:hidden; }
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+header { grid-column:1/-1; display:flex; align-items:center; padding:0 24px; border-bottom:1px solid var(--border); background:var(--bg-app); gap:16px; z-index:10; }
+.logo { font-weight:600; font-size:16px; color:var(--text-main); display:flex; align-items:center; gap:10px; letter-spacing:-0.3px; }
+.logo-fox { font-size:20px; filter:drop-shadow(0 2px 4px var(--accent-glow)); }
+.header-stats { display:flex; gap:20px; margin-left:auto; }
+.stat-chip { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:13px; font-weight:500; }
+.stat-chip .val { color:var(--text-main); font-family:var(--font-mono); }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--success); box-shadow:0 0 8px var(--success); animation:pulse 2.5s cubic-bezier(0.4,0,0.6,1) infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+aside { border-right:1px solid var(--border); background:var(--bg-panel); display:flex; flex-direction:column; overflow:hidden; }
+.sidebar-top { padding:16px; }
+.btn-new { width:100%; padding:10px 16px; background:var(--text-main); color:var(--bg-app); border:none; border-radius:var(--radius-md); font-family:var(--font-sans); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s ease; }
+.btn-new:hover { background:var(--accent); color:white; transform:translateY(-1px); }
+.btn-new:active { transform:scale(.98); }
+.search-wrap { padding:0 16px 16px; border-bottom:1px solid var(--border); }
+.search-input { width:100%; padding:8px 12px; background:var(--bg-app); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-main); font-family:var(--font-sans); font-size:13px; outline:none; transition:all .2s ease; }
+.search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+.search-input::placeholder { color:var(--text-muted); }
+.profile-list { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:4px; }
+.profile-list::-webkit-scrollbar { width:4px; }
+.profile-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+.profile-item { padding:12px; border-radius:var(--radius-md); cursor:pointer; border:1px solid transparent; transition:all .15s ease; position:relative; background:transparent; }
+.profile-item:hover { background:var(--bg-hover); }
+.profile-item.active { background:var(--bg-input); border-color:var(--border-focus); }
+.profile-item.active::before { content:''; position:absolute; left:-12px; top:20%; bottom:20%; width:3px; background:var(--accent); border-radius:0 4px 4px 0; }
+.pi-name { font-weight:500; font-size:13px; color:var(--text-main); display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.pi-running { width:6px; height:6px; border-radius:50%; background:var(--success); flex-shrink:0; box-shadow:0 0 6px var(--success); }
+.pi-meta { color:var(--text-muted); font-size:11px; display:flex; gap:8px; align-items:center; font-family:var(--font-mono); }
+.pi-os { display:flex; align-items:center; gap:4px; }
+.tag { display:inline-block; padding:2px 6px; background:var(--bg-app); border:1px solid var(--border); border-radius:4px; font-size:10px; color:var(--text-muted); }
+.empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); font-size:13px; }
+.empty-icon { font-size:40px; margin-bottom:16px; opacity:.5; filter:grayscale(1); }
+
+/* ── Main ────────────────────────────────────────────────────────────── */
+main { overflow:hidden; display:flex; flex-direction:column; background:var(--bg-app); }
+.welcome { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; color:var(--text-muted); }
+.welcome-icon { font-size:64px; opacity:.2; filter:grayscale(1); }
+.welcome h2 { font-size:18px; font-weight:500; color:var(--text-main); }
+.detail { flex:1; display:none; flex-direction:column; overflow:hidden; }
+.detail.visible { display:flex; animation:fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.detail-header { padding:24px 32px 20px; display:flex; align-items:center; flex-wrap:wrap; gap:16px; background:var(--bg-app); }
+.header-title-group { flex:1; display:flex; flex-direction:column; gap:4px; min-width:200px; }
+.detail-name { font-family:var(--font-sans); font-size:24px; font-weight:600; width:100%; outline:none; background:transparent; border:none; color:var(--text-main); border-bottom:1px dashed transparent; padding-bottom:2px; transition:border-color .2s; }
+.detail-name:focus { border-color:var(--text-muted); }
+.detail-id { color:var(--text-muted); font-size:12px; font-family:var(--font-mono); }
+.action-bar { display:flex; gap:12px; align-items:center; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.btn { padding:8px 16px; border-radius:var(--radius-sm); font-family:var(--font-sans); font-size:13px; font-weight:500; cursor:pointer; border:1px solid transparent; transition:all .2s ease; display:inline-flex; align-items:center; gap:6px; }
+.btn-launch { background:var(--text-main); color:var(--bg-app); }
+.btn-launch:hover { background:var(--accent); color:white; transform:translateY(-1px); }
+.btn-stop { background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.2); color:var(--danger); }
+.btn-stop:hover { background:var(--danger); color:white; }
+.btn-save { background:var(--bg-panel); border-color:var(--border); color:var(--text-main); }
+.btn-save:hover { border-color:var(--border-focus); background:var(--bg-input); }
+.btn-delete { background:transparent; border-color:transparent; color:var(--text-muted); }
+.btn-delete:hover { color:var(--danger); background:rgba(239,68,68,.1); }
+.btn-info { background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.2); color:var(--info); }
+.btn-info:hover { background:var(--info); color:white; }
+.btn-accent { background:var(--accent); border-color:var(--accent); color:white; }
+.btn-accent:hover { background:var(--accent-hover); transform:translateY(-1px); }
+.btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+.tabs { display:flex; border-bottom:1px solid var(--border); padding:0 32px; gap:24px; }
+.tab { padding:12px 0; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s ease; margin-bottom:-1px; }
+.tab.active { color:var(--text-main); border-color:var(--accent); }
+.tab:hover:not(.active) { color:var(--text-main); }
+
+/* ── Forms ───────────────────────────────────────────────────────────── */
+.form-body { flex:1; overflow-y:auto; padding:32px; }
+.form-body::-webkit-scrollbar { width:6px; }
+.form-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:800px; }
+.form-grid .span2 { grid-column:span 2; }
+.form-group { display:flex; flex-direction:column; gap:8px; }
+.form-label { font-size:12px; font-weight:500; color:var(--text-muted); }
+.form-input,.form-select,.form-textarea { padding:10px 12px; background:var(--bg-app); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-main); font-family:var(--font-sans); font-size:13px; outline:none; transition:all .2s ease; width:100%; }
+.form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--border-focus); background:var(--bg-input); }
+.form-select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23a1a1aa%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat:no-repeat; background-position:right 12px top 50%; background-size:10px auto; padding-right:30px; }
+.form-textarea { resize:vertical; min-height:120px; font-family:var(--font-mono); font-size:12px; }
+.form-hint { font-size:11px; color:var(--text-muted); margin-top:4px; }
+.section-heading { font-size:14px; font-weight:600; color:var(--text-main); margin:32px 0 16px; display:flex; align-items:center; gap:8px; }
+.section-heading::after { content:''; flex:1; height:1px; background:var(--border); }
+.section-heading:first-child { margin-top:0; }
+
+/* Tags input */
+.tags-input-wrap { display:flex; flex-wrap:wrap; gap:6px; padding:6px 10px; background:var(--bg-app); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:40px; align-items:center; cursor:text; transition:all .2s ease; }
+.tags-input-wrap:focus-within { border-color:var(--border-focus); background:var(--bg-input); }
+.tag-badge { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; background:var(--bg-panel); border:1px solid var(--border); border-radius:4px; font-size:12px; color:var(--text-main); }
+.tag-remove { cursor:pointer; color:var(--text-muted); font-size:10px; transition:color .15s; }
+.tag-remove:hover { color:var(--danger); }
+.tags-real-input { background:transparent; border:none; outline:none; color:var(--text-main); font-family:var(--font-sans); font-size:13px; min-width:100px; flex:1; }
+
+/* Status badge */
+.status-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; font-family:var(--font-mono); }
+.status-running { background:rgba(16,185,129,.1); color:var(--success); border:1px solid rgba(16,185,129,.2); }
+.status-stopped { background:var(--bg-panel); color:var(--text-muted); border:1px solid var(--border); }
+
+/* Notification */
+.notif { position:fixed; bottom:32px; right:32px; padding:12px 20px; background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius-md); font-size:13px; font-weight:500; color:var(--text-main); box-shadow:0 10px 40px rgba(0,0,0,.5); transform:translateY(20px); opacity:0; transition:all .3s cubic-bezier(0.4,0,0.2,1); pointer-events:none; z-index:999; display:flex; align-items:center; gap:10px; }
+.notif.show { opacity:1; transform:translateY(0); }
+.notif.ok { border-left:3px solid var(--success); }
+.notif.err { border-left:3px solid var(--danger); }
+
+/* Modal */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:100; }
+.overlay.open { display:flex; animation:fadeIn .2s ease; }
+.modal { background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius-lg); width:500px; max-width:90vw; padding:32px; box-shadow:0 25px 50px -12px rgba(0,0,0,.5); }
+.modal-title { font-size:20px; font-weight:600; margin-bottom:24px; color:var(--text-main); display:flex; align-items:center; gap:8px; }
+.modal-footer { display:flex; justify-content:flex-end; gap:12px; margin-top:32px; }
+.btn-cancel { background:transparent; border-color:var(--border); color:var(--text-muted); }
+.btn-cancel:hover { color:var(--text-main); background:var(--bg-input); }
+.btn-create { background:var(--text-main); color:var(--bg-app); }
+.btn-create:hover { background:var(--accent); color:white; }
+
+/* Zombie / header buttons */
+.btn-zombie { padding:5px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent; color:var(--text-muted); font-family:var(--font-sans); font-size:12px; font-weight:500; cursor:pointer; transition:all .2s ease; }
+.btn-zombie:hover { color:var(--danger); border-color:rgba(239,68,68,.4); background:rgba(239,68,68,.06); }
+.btn-zombie:disabled { opacity:.5; cursor:not-allowed; }
+
+/* ── Extensions Tab ──────────────────────────────────────────────────── */
+.ext-layout { display:flex; gap:0; height:100%; }
+
+/* Left: profile's enabled extensions */
+.ext-panel { width:320px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column; padding:24px 20px; gap:12px; overflow-y:auto; }
+.ext-panel-title { font-size:13px; font-weight:600; color:var(--text-main); display:flex; align-items:center; justify-content:space-between; }
+.ext-item { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--bg-app); border:1px solid var(--border); border-radius:var(--radius-sm); transition:border-color .15s; }
+.ext-item:hover { border-color:var(--border-focus); }
+.ext-item-icon { font-size:20px; flex-shrink:0; }
+.ext-item-info { flex:1; min-width:0; }
+.ext-item-name { font-size:12px; font-weight:500; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ext-item-meta { font-size:10px; color:var(--text-muted); font-family:var(--font-mono); }
+.ext-toggle { width:32px; height:18px; border-radius:9px; border:none; cursor:pointer; transition:background .2s; flex-shrink:0; position:relative; }
+.ext-toggle.on { background:var(--success); }
+.ext-toggle.off { background:var(--border-focus); }
+.ext-toggle::after { content:''; position:absolute; top:2px; width:14px; height:14px; border-radius:50%; background:white; transition:left .2s; }
+.ext-toggle.on::after { left:16px; }
+.ext-toggle.off::after { left:2px; }
+
+/* Right: AMO store search */
+.amo-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.amo-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; gap:8px; align-items:center; }
+.amo-search-input { flex:1; padding:9px 14px; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-main); font-family:var(--font-sans); font-size:13px; outline:none; transition:all .2s; }
+.amo-search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+.amo-search-input::placeholder { color:var(--text-muted); }
+.amo-results { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:8px; }
+.amo-results::-webkit-scrollbar { width:5px; }
+.amo-results::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.amo-card { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius-md); transition:border-color .15s; }
+.amo-card:hover { border-color:var(--border-focus); }
+.amo-card-icon { width:40px; height:40px; border-radius:8px; object-fit:contain; flex-shrink:0; background:var(--bg-input); display:flex; align-items:center; justify-content:center; font-size:22px; }
+.amo-card-icon img { width:40px; height:40px; border-radius:8px; object-fit:contain; }
+.amo-card-body { flex:1; min-width:0; }
+.amo-card-name { font-size:13px; font-weight:600; color:var(--text-main); }
+.amo-card-summary { font-size:11px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.amo-card-meta { font-size:10px; color:var(--text-muted); font-family:var(--font-mono); margin-top:4px; display:flex; gap:10px; }
+.amo-card-actions { display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink:0; }
+.amo-placeholder { text-align:center; padding:60px 20px; color:var(--text-muted); font-size:13px; }
+.amo-spinner { display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.stars { color:#f59e0b; font-size:10px; }
+
+/* Session restore banner */
+.session-banner { margin-bottom:12px; padding:10px 14px; background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.2); border-radius:var(--radius-sm); display:flex; align-items:flex-start; gap:10px; }
+.session-banner-body { flex:1; min-width:0; }
+.session-banner-title { font-size:12px; font-weight:600; color:var(--info); margin-bottom:4px; }
+.session-banner-urls { font-size:11px; color:var(--text-muted); font-family:var(--font-mono); display:flex; flex-direction:column; gap:2px; }
+.session-banner-url { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.session-banner-actions { display:flex; gap:6px; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo"><span class="logo-fox">🦊</span> Camoufox Profile Manager</div>
+    <div class="header-stats">
+      <div class="stat-chip"><span class="dot"></span><span class="val" id="stat-running">0</span> Active</div>
+      <div class="stat-chip">Total: <span class="val" id="stat-total">0</span></div>
+      <button class="btn-zombie" onclick="zombieKill()" title="Kill all untracked browser processes">🧹 Cleanup</button>
+    </div>
+  </header>
+
+  <aside>
+    <div class="sidebar-top">
+      <button class="btn-new" onclick="openCreateModal()">+ New Environment</button>
+    </div>
+    <div class="search-wrap">
+      <input class="search-input" type="text" placeholder="Search configs or tags..." oninput="filterProfiles(this.value)" />
+    </div>
+    <div class="profile-list" id="profile-list">
+      <div class="empty-state"><div class="empty-icon">⌘</div><div>No profiles initialized</div></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🦊</div>
+      <h2>Select an environment to configure</h2>
+      <div style="font-size:13px">Ready for deployment</div>
+    </div>
+
+    <div class="detail" id="detail-panel">
+      <div class="detail-header">
+        <div class="header-title-group">
+          <input class="detail-name" id="detail-name" type="text" />
+          <div class="detail-id" id="detail-id"></div>
+        </div>
+        <div class="action-bar">
+          <span class="status-badge status-stopped" id="status-badge">● OFFLINE</span>
+          <button class="btn btn-launch" id="btn-launch" onclick="launchProfile()">▶ Launch</button>
+          <button class="btn btn-stop" id="btn-stop" onclick="stopProfile()" style="display:none">■ Terminate</button>
+          <button class="btn btn-save" onclick="saveProfile()">Save Config</button>
+          <button class="btn btn-delete" onclick="deleteProfile()">Delete</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-config')">Configuration</div>
+        <div class="tab" onclick="switchTab(this,'tab-extensions')">Extensions</div>
+        <div class="tab" onclick="switchTab(this,'tab-notes')">Secure Notes</div>
+      </div>
+
+      <div class="form-body">
+
+        <!-- ── Config Tab ── -->
+        <div id="tab-config">
+          <!-- Session restore banner -->
+          <div id="session-banner" style="display:none" class="session-banner">
+            <span style="font-size:18px;flex-shrink:0">🔁</span>
+            <div class="session-banner-body">
+              <div class="session-banner-title">Session Restore — last open tabs will be restored on next launch</div>
+              <div class="session-banner-urls" id="session-urls"></div>
+              <div class="session-banner-actions">
+                <button class="btn btn-save" style="padding:4px 10px;font-size:11px" onclick="clearSession()">✕ Clear Session</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-heading">Fingerprint Parameters</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Operating System</label>
+              <select class="form-select" id="fp-os">
+                <option value="windows">Windows</option>
+                <option value="macos">macOS</option>
+                <option value="linux">Linux</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">System Locale</label>
+              <select class="form-select" id="fp-locale">
+                <option value="en-US">en-US (English US)</option>
+                <option value="en-GB">en-GB (English UK)</option>
+                <option value="zh-CN">zh-CN (Chinese Simplified)</option>
+                <option value="zh-TW">zh-TW (Chinese Traditional)</option>
+                <option value="ja-JP">ja-JP (Japanese)</option>
+                <option value="ko-KR">ko-KR (Korean)</option>
+                <option value="fr-FR">fr-FR (French)</option>
+                <option value="de-DE">de-DE (German)</option>
+                <option value="es-ES">es-ES (Spanish)</option>
+                <option value="pt-BR">pt-BR (Portuguese Brazil)</option>
+                <option value="ru-RU">ru-RU (Russian)</option>
+                <option value="ar-SA">ar-SA (Arabic)</option>
+                <option value="hi-IN">hi-IN (Hindi)</option>
+                <option value="tr-TR">tr-TR (Turkish)</option>
+                <option value="vi-VN">vi-VN (Vietnamese)</option>
+                <option value="th-TH">th-TH (Thai)</option>
+                <option value="id-ID">id-ID (Indonesian)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Viewport / Resolution</label>
+              <select class="form-select" id="fp-screen">
+                <option value="1920x1080">1920×1080 (FHD)</option>
+                <option value="2560x1440">2560×1440 (QHD)</option>
+                <option value="3840x2160">3840×2160 (4K)</option>
+                <option value="1366x768">1366×768 (HD)</option>
+                <option value="1440x900">1440×900</option>
+                <option value="1280x800">1280×800</option>
+                <option value="2560x1600">2560×1600 (MacBook Pro)</option>
+                <option value="1512x982">1512×982 (MacBook Air M2)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Environment Tags</label>
+              <div class="tags-input-wrap" id="tags-wrap" onclick="document.getElementById('tag-input').focus()">
+                <input class="tags-real-input" id="tag-input" placeholder="Type and hit Enter..." />
+              </div>
+            </div>
+            <div class="form-group span2">
+              <label class="form-label">WebGL GPU (Vendor / Renderer)</label>
+              <select class="form-select" id="fp-gpu">
+                <option value="auto">Auto (camoufox default)</option>
+                <optgroup label="NVIDIA">
+                  <option value="nvidia_rtx4090">NVIDIA GeForce RTX 4090</option>
+                  <option value="nvidia_rtx4070">NVIDIA GeForce RTX 4070</option>
+                  <option value="nvidia_rtx3080">NVIDIA GeForce RTX 3080</option>
+                  <option value="nvidia_rtx3060">NVIDIA GeForce RTX 3060</option>
+                  <option value="nvidia_gtx1080">NVIDIA GeForce GTX 1080</option>
+                  <option value="nvidia_gtx1060">NVIDIA GeForce GTX 1060</option>
+                </optgroup>
+                <optgroup label="AMD">
+                  <option value="amd_rx7900">AMD Radeon RX 7900 XTX</option>
+                  <option value="amd_rx6800">AMD Radeon RX 6800 XT</option>
+                  <option value="amd_rx580">AMD Radeon RX 580</option>
+                </optgroup>
+                <optgroup label="Intel">
+                  <option value="intel_iris_xe">Intel Iris Xe Graphics</option>
+                  <option value="intel_uhd630">Intel UHD Graphics 630</option>
+                </optgroup>
+                <optgroup label="Apple">
+                  <option value="apple_m2">Apple M2 GPU</option>
+                  <option value="apple_m1">Apple M1 GPU</option>
+                </optgroup>
+              </select>
+              <div class="form-hint">GPU option is saved but currently auto-matched by Camoufox based on OS.</div>
+            </div>
+          </div>
+
+          <div class="section-heading">Network Routing</div>
+          <div class="form-grid">
+            <div class="form-group span2">
+              <label class="form-label">Proxy Node URL</label>
+              <div style="display:flex;gap:8px;align-items:stretch">
+                <input class="form-input" id="fp-proxy" type="text" placeholder="socks5://user:pass@host:port" style="font-family:var(--font-mono);flex:1"/>
+                <button class="btn btn-save" id="btn-proxy-test" onclick="testProxy()" style="white-space:nowrap;flex-shrink:0">⚡ Test</button>
+              </div>
+              <div class="form-hint">Supports HTTP, HTTPS, SOCKS4, SOCKS5. Use socks5h:// to route DNS through proxy.</div>
+              <div id="proxy-result" style="display:none;margin-top:10px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);font-family:var(--font-mono);font-size:12px;line-height:1.8;background:var(--bg-app)"></div>
+            </div>
+          </div>
+
+          <div class="section-heading">Timezone</div>
+          <div class="form-grid">
+            <div class="form-group span2">
+              <label class="form-label">Timezone Override</label>
+              <select class="form-select" id="fp-timezone">
+                <option value="auto">Auto (follow proxy IP via geoip)</option>
+                <optgroup label="Americas">
+                  <option value="America/New_York">America/New_York (UTC-5)</option>
+                  <option value="America/Chicago">America/Chicago (UTC-6)</option>
+                  <option value="America/Denver">America/Denver (UTC-7)</option>
+                  <option value="America/Los_Angeles">America/Los_Angeles (UTC-8)</option>
+                  <option value="America/Sao_Paulo">America/Sao_Paulo (UTC-3)</option>
+                </optgroup>
+                <optgroup label="Europe">
+                  <option value="Europe/London">Europe/London (UTC+0)</option>
+                  <option value="Europe/Paris">Europe/Paris (UTC+1)</option>
+                  <option value="Europe/Berlin">Europe/Berlin (UTC+1)</option>
+                  <option value="Europe/Moscow">Europe/Moscow (UTC+3)</option>
+                </optgroup>
+                <optgroup label="Asia">
+                  <option value="Asia/Dubai">Asia/Dubai (UTC+4)</option>
+                  <option value="Asia/Kolkata">Asia/Kolkata (UTC+5:30)</option>
+                  <option value="Asia/Shanghai">Asia/Shanghai (UTC+8)</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+                  <option value="Asia/Seoul">Asia/Seoul (UTC+9)</option>
+                  <option value="Asia/Singapore">Asia/Singapore (UTC+8)</option>
+                  <option value="Asia/Bangkok">Asia/Bangkok (UTC+7)</option>
+                  <option value="Asia/Jakarta">Asia/Jakarta (UTC+7)</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="Australia/Sydney">Australia/Sydney (UTC+11)</option>
+                  <option value="Pacific/Auckland">Pacific/Auckland (UTC+13)</option>
+                </optgroup>
+              </select>
+              <div class="form-hint">When Auto, timezone is matched to your proxy IP. Manual overrides this.</div>
+            </div>
+          </div>
+
+          <div class="section-heading">Browser Startup</div>
+          <div class="form-grid">
+            <div class="form-group span2">
+              <label class="form-label">Launch URL</label>
+              <input class="form-input" id="fp-launch-url" type="text" placeholder="https://www.google.com (leave blank for about:blank)"/>
+              <div class="form-hint">Default page when no session is remembered. Session restore takes priority when available.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Extensions Tab ── -->
+        <div id="tab-extensions" style="display:none;height:100%;margin:-32px;overflow:hidden">
+          <div class="ext-layout">
+
+            <!-- Left: this profile's extensions -->
+            <div class="ext-panel" id="ext-panel">
+              <div class="ext-panel-title">
+                <span>🧩 This Profile</span>
+                <button class="btn btn-accent" style="padding:5px 12px;font-size:12px" onclick="openAddExtension()">+ Add Extension</button>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);line-height:1.6">
+                Toggle extensions on/off for this profile. Changes apply on next launch.
+              </div>
+              <div id="profile-ext-list">
+                <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px 0">Loading…</div>
+              </div>
+            </div>
+
+            <!-- Right: AMO store -->
+            <div class="amo-panel">
+              <div class="amo-header">
+                <span style="font-size:18px">🦊</span>
+                <input class="amo-search-input" id="amo-search" type="text" placeholder="Search Firefox Add-ons (e.g. ublock, tampermonkey, dark reader)…"
+                  onkeydown="if(event.key==='Enter')searchAMO()" />
+                <button class="btn btn-save" style="flex-shrink:0;white-space:nowrap" onclick="searchAMO()">Search AMO</button>
+              </div>
+              <div class="amo-results" id="amo-results">
+                <div class="amo-placeholder">
+                  <div style="font-size:36px;margin-bottom:12px;opacity:.3">🔍</div>
+                  <div>Search the Firefox Add-ons store above</div>
+                  <div style="margin-top:6px;font-size:12px">Downloaded extensions will appear in the left panel</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Notes Tab ── -->
+        <div id="tab-notes" style="display:none">
+          <div class="section-heading">Secure Notes</div>
+          <div class="form-group">
+            <textarea class="form-textarea" id="fp-notes" placeholder="Store credentials, task scripts, or environmental notes here..."></textarea>
+          </div>
+        </div>
+
+      </div><!-- /form-body -->
+    </div><!-- /detail-panel -->
+  </main>
+</div>
+
+<!-- Create modal -->
+<div class="overlay" id="create-overlay">
+  <div class="modal">
+    <div class="modal-title">🦊 Initialize Profile</div>
+    <div class="form-grid">
+      <div class="form-group span2">
+        <label class="form-label">Identifier Name</label>
+        <input class="form-input" id="new-name" type="text" placeholder="e.g. Env_TikTok_01" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target OS</label>
+        <select class="form-select" id="new-os">
+          <option value="windows">Windows</option>
+          <option value="macos">macOS</option>
+          <option value="linux">Linux</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Locale</label>
+        <select class="form-select" id="new-locale">
+          <option value="en-US">en-US</option>
+          <option value="zh-CN">zh-CN</option>
+          <option value="ja-JP">ja-JP</option>
+          <option value="ko-KR">ko-KR</option>
+          <option value="fr-FR">fr-FR</option>
+          <option value="de-DE">de-DE</option>
+          <option value="es-ES">es-ES</option>
+          <option value="ru-RU">ru-RU</option>
+          <option value="pt-BR">pt-BR</option>
+          <option value="vi-VN">vi-VN</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-create" onclick="createProfile()">Generate</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let profiles = [];
+let currentId = null;
+let currentMeta = null;
+let tags = [];
+let profileExtensions = [];   // filenames enabled for current profile
+let allExtensions = [];        // all local .xpi files
+let statusPollInterval = null;
+let amoPage = 1;
+let amoQuery = '';
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  await loadProfiles();
+  document.getElementById('tag-input').addEventListener('keydown', onTagKeydown);
+  document.getElementById('new-name').addEventListener('keydown', e => { if (e.key==='Enter') createProfile(); });
+  document.getElementById('create-overlay').addEventListener('click', e => { if (e.target===e.currentTarget) closeCreateModal(); });
+  startStatusPolling();
+}
+
+function startStatusPolling() {
+  if (statusPollInterval) clearInterval(statusPollInterval);
+  statusPollInterval = setInterval(async () => {
+    if (!currentId) return;
+    try {
+      const r = await fetch(`/api/profiles/${currentId}/status`);
+      const d = await r.json();
+      updateStatusUI(d.is_running);
+    } catch {}
+    await loadProfiles(false);
+  }, 3000);
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, url, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+// ── Profiles ──────────────────────────────────────────────────────────────────
+async function loadProfiles(rerender = true) {
+  try {
+    profiles = await api('GET', '/api/profiles');
+    if (rerender) renderProfileList(profiles);
+    updateStats();
+  } catch {
+    notify('Failed to load profiles', 'err');
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = profiles.length;
+  document.getElementById('stat-running').textContent = profiles.filter(p => p.is_running).length;
+}
+
+let filterText = '';
+function filterProfiles(q) {
+  filterText = q.toLowerCase();
+  const filtered = profiles.filter(p =>
+    p.name.toLowerCase().includes(filterText) ||
+    (p.tags || []).some(t => t.toLowerCase().includes(filterText))
+  );
+  renderProfileList(filtered);
+}
+
+function renderProfileList(list) {
+  const el = document.getElementById('profile-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⌘</div><div>${filterText ? 'No matches found' : 'No profiles initialized'}</div></div>`;
+    return;
+  }
+  const osIcons = { windows: '⊞', macos: '', linux: '🐧' };
+  el.innerHTML = list.map(p => {
+    const tagsHtml = (p.tags || []).slice(0,2).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+    return `<div class="profile-item ${p.id===currentId?'active':''}" onclick="selectProfile('${p.id}')">
+      <div class="pi-name">${p.is_running?'<span class="pi-running"></span>':''} ${esc(p.name)}</div>
+      <div class="pi-meta"><span class="pi-os">${osIcons[p.os]||'❖'} ${p.os}</span>${tagsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+async function selectProfile(id) {
+  currentId = id;
+  const meta = await api('GET', `/api/profiles/${id}`);
+  currentMeta = meta;
+  populateDetail(meta);
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('detail-panel').classList.add('visible');
+  renderProfileList(filterText ? profiles.filter(p => p.name.toLowerCase().includes(filterText)) : profiles);
+}
+
+function populateDetail(meta) {
+  document.getElementById('detail-name').value = meta.name;
+  document.getElementById('detail-id').textContent = `ID: ${meta.id}`;
+  document.getElementById('fp-os').value = meta.os || 'windows';
+  document.getElementById('fp-locale').value = meta.locale || 'en-US';
+  document.getElementById('fp-screen').value = (meta.fingerprint||{}).screen || '1920x1080';
+  document.getElementById('fp-gpu').value = (meta.fingerprint||{}).gpu || 'auto';
+  document.getElementById('fp-proxy').value = meta.proxy || '';
+  document.getElementById('fp-timezone').value = (meta.fingerprint||{}).timezone || 'auto';
+  document.getElementById('fp-launch-url').value = (meta.fingerprint||{}).launch_url || '';
+  document.getElementById('fp-notes').value = meta.notes || '';
+  tags = [...(meta.tags || [])];
+  renderTags();
+  updateStatusUI(meta.is_running);
+  renderSessionBanner(meta.last_urls || []);
+  profileExtensions = [...(meta.extensions || [])];
+}
+
+// ── Session banner ────────────────────────────────────────────────────────────
+function renderSessionBanner(urls) {
+  const banner = document.getElementById('session-banner');
+  const urlsEl = document.getElementById('session-urls');
+  if (!urls || !urls.length) {
+    banner.style.display = 'none';
+    return;
+  }
+  banner.style.display = 'flex';
+  urlsEl.innerHTML = urls.slice(0, 5).map(u =>
+    `<div class="session-banner-url">↳ ${esc(u)}</div>`
+  ).join('') + (urls.length > 5 ? `<div style="color:var(--text-muted)">…and ${urls.length-5} more</div>` : '');
+}
+
+async function clearSession() {
+  if (!currentId) return;
+  await api('DELETE', `/api/profiles/${currentId}/last-urls`);
+  currentMeta.last_urls = [];
+  renderSessionBanner([]);
+  notify('Session cleared — will start fresh next launch', 'ok');
+}
+
+// ── Status UI ─────────────────────────────────────────────────────────────────
+function updateStatusUI(running) {
+  const badge = document.getElementById('status-badge');
+  const btnLaunch = document.getElementById('btn-launch');
+  const btnStop = document.getElementById('btn-stop');
+  if (running) {
+    badge.className = 'status-badge status-running';
+    badge.textContent = '● ACTIVE';
+    btnLaunch.style.display = 'none';
+    btnStop.style.display = '';
+  } else {
+    badge.className = 'status-badge status-stopped';
+    badge.textContent = '● OFFLINE';
+    btnLaunch.style.display = '';
+    btnStop.style.display = 'none';
+  }
+}
+
+// ── Launch / Stop ─────────────────────────────────────────────────────────────
+async function launchProfile(gotoUrl = '') {
+  if (!currentId) return;
+  const btn = document.getElementById('btn-launch');
+  btn.disabled = true;
+  btn.textContent = 'Initializing...';
+  try {
+    const body = gotoUrl ? { goto_url: gotoUrl } : {};
+    const r = await api('POST', `/api/profiles/${currentId}/launch`, body);
+    if (r.error) { notify(r.error, 'err'); }
+    else { notify('Environment deployed successfully', 'ok'); updateStatusUI(true); }
+  } catch { notify('Deployment failed', 'err'); }
+  finally { btn.disabled = false; btn.textContent = '▶ Launch'; }
+}
+
+async function stopProfile() {
+  if (!currentId) return;
+  const r = await api('POST', `/api/profiles/${currentId}/stop`);
+  if (r.error) notify(r.error, 'err');
+  else { notify('Environment terminated', 'ok'); updateStatusUI(false); }
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+async function saveProfile() {
+  if (!currentId) return;
+  const payload = {
+    name:       document.getElementById('detail-name').value,
+    os:         document.getElementById('fp-os').value,
+    locale:     document.getElementById('fp-locale').value,
+    screen:     document.getElementById('fp-screen').value,
+    gpu:        document.getElementById('fp-gpu').value,
+    proxy:      document.getElementById('fp-proxy').value,
+    timezone:   document.getElementById('fp-timezone').value,
+    launch_url: document.getElementById('fp-launch-url').value,
+    notes:      document.getElementById('fp-notes').value,
+    extensions: profileExtensions,
+    tags,
+  };
+  const r = await api('PUT', `/api/profiles/${currentId}`, payload);
+  if (r.error) notify(r.error, 'err');
+  else { notify('Configuration saved', 'ok'); await loadProfiles(true); }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+async function deleteProfile() {
+  if (!currentId) return;
+  if (!confirm('Are you sure you want to permanently delete this environment?')) return;
+  const r = await api('DELETE', `/api/profiles/${currentId}`);
+  if (r.error) { notify(r.error, 'err'); return; }
+  currentId = null;
+  document.getElementById('detail-panel').classList.remove('visible');
+  document.getElementById('welcome-screen').style.display = '';
+  await loadProfiles();
+  notify('Environment deleted', 'ok');
+}
+
+// ── Create modal ──────────────────────────────────────────────────────────────
+function openCreateModal() { document.getElementById('create-overlay').classList.add('open'); document.getElementById('new-name').focus(); }
+function closeCreateModal() { document.getElementById('create-overlay').classList.remove('open'); }
+async function createProfile() {
+  const name = document.getElementById('new-name').value.trim() || 'New Environment';
+  const r = await api('POST', '/api/profiles', {
+    name,
+    os:     document.getElementById('new-os').value,
+    locale: document.getElementById('new-locale').value,
+  });
+  closeCreateModal();
+  document.getElementById('new-name').value = '';
+  await loadProfiles();
+  selectProfile(r.id);
+  notify(`Environment "${name}" created`, 'ok');
+}
+
+// ── Tags ──────────────────────────────────────────────────────────────────────
+function renderTags() {
+  const wrap = document.getElementById('tags-wrap');
+  const input = document.getElementById('tag-input');
+  wrap.innerHTML = '';
+  tags.forEach((t, i) => {
+    const badge = document.createElement('span');
+    badge.className = 'tag-badge';
+    badge.innerHTML = `${esc(t)} <span class="tag-remove" onclick="removeTag(${i})">✕</span>`;
+    wrap.appendChild(badge);
+  });
+  wrap.appendChild(input);
+}
+function onTagKeydown(e) {
+  if (e.key==='Enter'||e.key===',') {
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/,/g,'');
+    if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
+    e.target.value = '';
+  } else if (e.key==='Backspace' && !e.target.value && tags.length) {
+    tags.pop(); renderTags();
+  }
+}
+function removeTag(i) { tags.splice(i,1); renderTags(); }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tabEl, tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  ['tab-config','tab-extensions','tab-notes'].forEach(id => {
+    document.getElementById(id).style.display = id===tabId ? '' : 'none';
+  });
+  if (tabId==='tab-extensions') loadExtensionsTab();
+}
+
+// ── Extensions Tab ────────────────────────────────────────────────────────────
+async function loadExtensionsTab() {
+  // Load all local .xpi files
+  try {
+    allExtensions = await api('GET', '/api/extensions');
+  } catch { allExtensions = []; }
+  renderProfileExtList();
+}
+
+function renderProfileExtList() {
+  const el = document.getElementById('profile-ext-list');
+  if (!allExtensions.length) {
+    el.innerHTML = `<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px 0">
+      No extensions downloaded yet.<br>Search and install from the store →
+    </div>`;
+    return;
+  }
+  el.innerHTML = allExtensions.map(e => {
+    const enabled = profileExtensions.includes(e.filename);
+    return `<div class="ext-item">
+      <div class="ext-item-icon">🧩</div>
+      <div class="ext-item-info">
+        <div class="ext-item-name" title="${esc(e.filename)}">${esc(e.filename.replace(/-[\d.]+\.xpi$/,'').replace(/_/g,' '))}</div>
+        <div class="ext-item-meta">${e.size_kb} KB</div>
+      </div>
+      <button class="ext-toggle ${enabled?'on':'off'}" onclick="toggleExtension('${esc(e.filename)}')" title="${enabled?'Disable':'Enable'} for this profile"></button>
+    </div>`;
+  }).join('');
+}
+
+async function toggleExtension(filename) {
+  if (profileExtensions.includes(filename)) {
+    profileExtensions = profileExtensions.filter(f => f !== filename);
+  } else {
+    profileExtensions.push(filename);
+  }
+  // Auto-save extension list
+  await api('PUT', `/api/profiles/${currentId}/extensions`, { extensions: profileExtensions });
+  notify(profileExtensions.includes(filename) ? `Enabled for this profile` : `Disabled for this profile`, 'ok');
+  renderProfileExtList();
+}
+
+// ── "Add Extension" button: launch browser → AMO store ───────────────────────
+async function openAddExtension() {
+  if (!currentId) return;
+  const AMO_URL = 'https://addons.mozilla.org/firefox/extensions/';
+  const isRunning = profiles.find(p => p.id === currentId)?.is_running;
+
+  if (isRunning) {
+    // Already running — can't inject a new goto_url into existing session
+    notify('Profile is already running. Visit AMO in the browser window.', 'ok');
+    return;
+  }
+
+  notify('Launching browser and opening Firefox Add-ons store…', 'ok');
+  await launchProfile(AMO_URL);
+}
+
+// ── AMO search ────────────────────────────────────────────────────────────────
+async function searchAMO(page = 1) {
+  const q = document.getElementById('amo-search').value.trim();
+  if (!q) return;
+  amoQuery = q;
+  amoPage = page;
+
+  const el = document.getElementById('amo-results');
+  el.innerHTML = `<div class="amo-placeholder"><div class="amo-spinner"></div><div style="margin-top:12px">Searching Firefox Add-ons…</div></div>`;
+
+  try {
+    const r = await api('POST', '/api/extensions/search', { q, page });
+    if (r.error) {
+      el.innerHTML = `<div class="amo-placeholder" style="color:var(--danger)">⚠ ${esc(r.error)}</div>`;
+      return;
+    }
+    if (!r.results || !r.results.length) {
+      el.innerHTML = `<div class="amo-placeholder">No results for "<strong>${esc(q)}</strong>"</div>`;
+      return;
+    }
+    renderAMOResults(r);
+  } catch(e) {
+    el.innerHTML = `<div class="amo-placeholder" style="color:var(--danger)">⚠ Search failed: ${esc(String(e))}</div>`;
+  }
+}
+
+function renderAMOResults(data) {
+  const el = document.getElementById('amo-results');
+  const cards = data.results.map(addon => {
+    const stars = '★'.repeat(Math.round(addon.rating)) + '☆'.repeat(5 - Math.round(addon.rating));
+    const users = addon.users > 1e6 ? (addon.users/1e6).toFixed(1)+'M' :
+                  addon.users > 1e3 ? (addon.users/1e3).toFixed(0)+'K' : addon.users;
+    const iconHtml = addon.icon
+      ? `<img src="${esc(addon.icon)}" onerror="this.parentElement.textContent='🧩'" loading="lazy">`
+      : '🧩';
+    const alreadyLocal = addon.already_local;
+    const enabled = profileExtensions.includes(addon.filename);
+
+    return `<div class="amo-card" id="amo-card-${esc(addon.filename)}">
+      <div class="amo-card-icon">${iconHtml}</div>
+      <div class="amo-card-body">
+        <div class="amo-card-name">${esc(addon.name)}</div>
+        <div class="amo-card-summary">${esc(addon.summary)}</div>
+        <div class="amo-card-meta">
+          <span class="stars">${stars}</span>
+          <span>${users} users</span>
+          <span>v${esc(addon.version)}</span>
+        </div>
+      </div>
+      <div class="amo-card-actions">
+        ${alreadyLocal
+          ? `<button class="btn btn-save" style="font-size:11px;padding:4px 10px" disabled>✓ Downloaded</button>
+             <button class="btn ${enabled?'btn-stop':'btn-info'}" style="font-size:11px;padding:4px 10px"
+               onclick="toggleExtension('${esc(addon.filename)}');this.className='btn '+(profileExtensions.includes('${esc(addon.filename)}')?'btn-stop':'btn-info');this.textContent=profileExtensions.includes('${esc(addon.filename)}')?'✓ Enabled':'+ Enable'">
+               ${enabled ? '✓ Enabled' : '+ Enable'}
+             </button>`
+          : `<button class="btn btn-accent" style="font-size:11px;padding:4px 10px"
+               id="dl-btn-${esc(addon.filename)}"
+               onclick="downloadAMOExtension('${esc(addon.download_url)}','${esc(addon.filename)}',this)">
+               ↓ Install
+             </button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+
+  // Pagination
+  const totalPages = Math.ceil(data.count / 12);
+  const pager = totalPages > 1 ? `
+    <div style="display:flex;justify-content:center;gap:8px;padding:16px 0;align-items:center">
+      ${amoPage > 1 ? `<button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="searchAMO(${amoPage-1})">← Prev</button>` : ''}
+      <span style="color:var(--text-muted);font-size:12px">Page ${amoPage} / ${totalPages}</span>
+      ${amoPage < totalPages ? `<button class="btn btn-save" style="padding:5px 12px;font-size:12px" onclick="searchAMO(${amoPage+1})">Next →</button>` : ''}
+    </div>` : '';
+
+  el.innerHTML = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">${data.count.toLocaleString()} results for "${esc(amoQuery)}"</div>${cards}${pager}`;
+}
+
+async function downloadAMOExtension(downloadUrl, filename, btn) {
+  btn.disabled = true;
+  btn.textContent = '↓ Downloading…';
+
+  try {
+    const r = await api('POST', '/api/extensions/install', { download_url: downloadUrl, filename });
+    if (r.error) {
+      notify(`Install failed: ${r.error}`, 'err');
+      btn.disabled = false;
+      btn.textContent = '↓ Install';
+      return;
+    }
+    // Mark as downloaded, show enable button
+    const sizeKb = r.size ? (r.size/1024).toFixed(1)+' KB' : '';
+    btn.parentElement.innerHTML = `
+      <button class="btn btn-save" style="font-size:11px;padding:4px 10px" disabled>✓ Downloaded${sizeKb?' ('+sizeKb+')':''}</button>
+      <button class="btn btn-info" style="font-size:11px;padding:4px 10px"
+        onclick="toggleExtension('${esc(filename)}');this.className='btn '+(profileExtensions.includes('${esc(filename)}')?'btn-stop':'btn-info');this.textContent=profileExtensions.includes('${esc(filename)}')?'✓ Enabled':'+ Enable'">
+        + Enable
+      </button>`;
+    allExtensions.push({ filename, size_kb: sizeKb });
+    renderProfileExtList();
+    notify(`"${filename.replace(/-[\d.]+\.xpi$/,'')}" downloaded`, 'ok');
+  } catch(e) {
+    notify('Download failed', 'err');
+    btn.disabled = false;
+    btn.textContent = '↓ Install';
+  }
+}
+
+// ── Proxy test ────────────────────────────────────────────────────────────────
+async function testProxy() {
+  const proxy = document.getElementById('fp-proxy').value.trim();
+  const btn = document.getElementById('btn-proxy-test');
+  const result = document.getElementById('proxy-result');
+  btn.disabled = true; btn.textContent = 'Testing…'; result.style.display='none';
+  try {
+    const r = await api('POST', '/api/proxy-test', { proxy });
+    result.style.display = 'block';
+    if (r.ok) {
+      const flag = countryFlag(r.country);
+      result.style.borderColor = 'rgba(16,185,129,.3)';
+      result.innerHTML = `
+        <div style="color:var(--success);font-weight:600;margin-bottom:6px">✓ Connection Successful</div>
+        <div><span style="color:var(--text-muted)">IP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> <span style="color:var(--text-main)">${esc(r.ip)}</span></div>
+        <div><span style="color:var(--text-muted)">Location</span> <span style="color:var(--text-main)">${flag} ${esc(r.city)}, ${esc(r.region)}, ${esc(r.country)}</span></div>
+        <div><span style="color:var(--text-muted)">ISP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> <span style="color:var(--text-main)">${esc(r.org)}</span></div>
+        <div><span style="color:var(--text-muted)">Latency&nbsp;</span> <span style="color:${r.latency<300?'var(--success)':r.latency<800?'var(--accent)':'var(--danger)'}">${r.latency} ms</span></div>`;
+    } else {
+      result.style.borderColor = 'rgba(239,68,68,.3)';
+      result.innerHTML = `<div style="color:var(--danger)">✕ Failed: ${esc(r.error)}</div>`;
+    }
+  } catch(e) {
+    result.style.display='block'; result.style.borderColor='rgba(239,68,68,.3)';
+    result.innerHTML=`<div style="color:var(--danger)">✕ Request error: ${esc(String(e))}</div>`;
+  } finally { btn.disabled=false; btn.textContent='⚡ Test'; }
+}
+function countryFlag(code) {
+  if (!code||code.length!==2) return '🌐';
+  return String.fromCodePoint(...[...code.toUpperCase()].map(c=>0x1F1E6-65+c.charCodeAt(0)));
+}
+
+// ── Zombie killer ─────────────────────────────────────────────────────────────
+async function zombieKill() {
+  const btn = document.querySelector('.btn-zombie');
+  btn.textContent = '🧹 Cleaning…'; btn.disabled = true;
+  try {
+    const r = await api('POST', '/api/zombie-kill');
+    if (r.killed && r.killed.length > 0) notify(`Killed ${r.killed.length} zombie process(es): PID ${r.killed.join(', ')}`, 'ok');
+    else notify('No zombie processes found — system is clean', 'ok');
+    await loadProfiles();
+  } catch { notify('Cleanup failed', 'err'); }
+  finally { btn.textContent='🧹 Cleanup'; btn.disabled=false; }
+}
+
+// ── Notify ────────────────────────────────────────────────────────────────────
+let notifTimer;
+function notify(msg, type='ok') {
+  const el = document.getElementById('notif');
+  el.innerHTML = (type==='ok'?'<span style="color:var(--success)">✓</span> ':'<span style="color:var(--danger)">✕</span> ') + msg;
+  el.className = `notif show ${type}`;
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>
